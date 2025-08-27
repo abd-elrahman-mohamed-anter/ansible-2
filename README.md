@@ -175,7 +175,10 @@ ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
 After deployment:
 
 * **VM: debian1** → [http://192.168.125.131:8081](http://192.168.125.131:8081)
+* ![131](131.png)
 * **VM: debian-cloned** → [http://192.168.125.130:8081](http://192.168.125.130:8081)
+* ![130](130.png)
+
 
 ---
 
