@@ -164,6 +164,11 @@ spring_app_port: 8081
 ```bash
 ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
 ```
+* ![1](1.png)
+
+
+* ![2](2.png)
+
 
 * Enter the sudo password for each VM.
 * The playbook will install Docker, copy application files, build the Docker image, and run the container.
