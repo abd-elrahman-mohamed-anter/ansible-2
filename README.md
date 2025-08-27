@@ -1,70 +1,12 @@
-# Ansible SSH Configuration
+# Deploying Spring Petclinic using Ansible and Docker on Debian VMs
 
-This project demonstrates how to configure SSH for passwordless access between machines and use Ansible to manage them.
-
----
-
-## 1. ansible-installation
-
-Install **Ansible** on your **control node** (the main machine).  
-
-### On Debian/Ubuntu:
-```bash
-sudo apt update
-sudo apt install ansible -y
-```
-
-### On RedHat/CentOS:
-```bash
-sudo yum install epel-release -y
-sudo yum install ansible -y
-```
-
-### Verify installation:
-```bash
-ansible --version
-```
+This project demonstrates how to automate Docker installation and deploy the Spring Petclinic application on Debian VMs using Ansible.
 
 ---
 
-## 2. keygen
+## 1. Inventory File
 
-Generate SSH keys on your **control node**:
-
-```bash
-ssh-keygen
-```
-
-- When asked for "passphrase" → just press **Enter**.
-- Generated files:
-  - `~/.ssh/id_rsa` → private key  
-  - `~/.ssh/id_rsa.pub` → public key  
-
----
-
-## 3. copy-id-for-abdoomo
-
-Copy your public key to the host with user **abdoomo**:
-
-```bash
-ssh-copy-id abdoomo@192.168.125.131
-```
-
----
-
-## 4. copy-id-for-ahmed
-
-Copy your public key to the host with user **ahmed**:
-
-```bash
-ssh-copy-id ahmed@192.168.125.130
-```
-
----
-
-## 5. cat-hosts
-
-Create the inventory file `hosts.ini` and list your machines:  
+The `hosts.ini` file contains all target VMs:
 
 ```ini
 [vm]
@@ -72,27 +14,168 @@ debian1 ansible_host=192.168.125.131 ansible_user=abdoomo
 debian-cloned ansible_host=192.168.125.130 ansible_user=ahmed
 ```
 
+* `ansible_host`: The IP address of the VM.
+* `ansible_user`: The SSH user for connecting to the VM.
+
 ---
 
-## 6. ansible-ping-on-debian1
+## 2. Variables Used in the Playbook
 
-Ping only the host **debian1** to test Ansible connection:  
+```yaml
+docker_users:
+  - abdoomo
+  - ahmed
 
-```bash
-ansible -i hosts.ini debian1 -m ping
+spring_app_src: /home/abdoomo/ansible
+spring_app_dest: "/home/{{ ansible_user }}/spring-app"
+spring_app_port: 8081
+```
+
+* `docker_users`: Users to be added to the Docker group for permission to manage containers.
+* `spring_app_src`: Path to the Spring Petclinic files on the Ansible Controller.
+* `spring_app_dest`: Path to copy the application files on each VM.
+* `spring_app_port`: New port on the VM to avoid conflicts with existing services (e.g., Nginx on 8080).
+
+---
+
+## 3. Playbook Overview
+
+### A. Docker Installation
+
+1. **Stop Docker if running**:
+
+```yaml
+- name: Stop Docker service if running
+  service:
+    name: docker
+    state: stopped
+  ignore_errors: yes
+```
+
+2. **Remove old Docker**:
+
+```yaml
+- name: Remove Docker package
+  apt:
+    name: docker.io
+    state: absent
+    purge: yes
+
+- name: Remove Docker directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/docker
+    - /etc/docker
+    - /var/run/docker.sock
+    - /usr/bin/docker
+  ignore_errors: yes
+```
+
+3. **Install Docker**:
+
+```yaml
+- name: Install Docker package directly
+  apt:
+    name: docker.io
+    state: latest
+    update_cache: yes
+```
+
+4. **Ensure Docker is running and enabled**:
+
+```yaml
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+```
+
+5. **Add users to Docker group**:
+
+```yaml
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
 ```
 
 ---
 
-## 7. ping-on-2-machines
+### B. Deploy Spring Petclinic
 
-Ping **all machines** inside the group `vm` to test Ansible connection:  
+1. **Create application directory on VM**:
 
-```bash
-ansible -i hosts.ini vm -m ping
+```yaml
+- name: Create application directory
+  file:
+    path: "{{ spring_app_dest }}"
+    state: directory
+    mode: '0755'
 ```
 
-If everything is set up correctly, you should see **SUCCESS** for both hosts.  
+2. **Copy application files to VM (all files at once)**:
+
+```yaml
+- name: Copy Spring Petclinic files to VM
+  copy:
+    src: "{{ spring_app_src }}/"
+    dest: "{{ spring_app_dest }}/"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    mode: '0644'
+```
+
+3. **Build Docker image**:
+
+```yaml
+- name: Build Docker image for Spring Petclinic
+  docker_image:
+    name: spring-petclinic
+    tag: latest
+    build:
+      path: "{{ spring_app_dest }}"
+    state: present
+```
+
+4. **Run Docker container and map the new port**:
+
+```yaml
+- name: Run Spring Petclinic container
+  docker_container:
+    name: spring-petclinic
+    image: spring-petclinic:latest
+    state: started
+    restart_policy: always
+    published_ports:
+      - "{{ spring_app_port }}:8080"
+```
+
+> The `spring_app_port` variable ensures the application uses a port that does not conflict with other services like Nginx.
+
+---
+
+## 4. Running the Playbook
+
+```bash
+ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
+```
+
+* Enter the sudo password for each VM.
+* The playbook will install Docker, copy application files, build the Docker image, and run the container.
+
+---
+
+## 5. Access the Application
+
+After deployment:
+
+* **VM: debian1** → [http://192.168.125.131:8081](http://192.168.125.131:8081)
+* **VM: debian-cloned** → [http://192.168.125.130:8081](http://192.168.125.130:8081)
 
 ---
 
