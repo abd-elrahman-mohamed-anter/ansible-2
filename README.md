@@ -246,6 +246,6 @@ ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
 * Nginx was already installed, so no changes were made (`changed=0`) ⚡
 
 📸 Example:
-![conditioning](condition.png)
+![conditioning](condition1.png)
 
 ```
