@@ -1,6 +1,11 @@
-# Deploying Spring Petclinic using Ansible and Docker on Debian VMs
 
-This project demonstrates how to automate Docker installation and deploy the Spring Petclinic application on Debian VMs using Ansible.
+
+---
+
+````markdown
+# 🐳 Deploying Spring Petclinic using Ansible and Docker on Debian VMs
+
+This project demonstrates how to automate **Docker installation** and deploy the **Spring Petclinic** application on Debian VMs using **Ansible**.
 
 ---
 
@@ -12,10 +17,10 @@ The `hosts.ini` file contains all target VMs:
 [vm]
 debian1 ansible_host=192.168.125.131 ansible_user=abdoomo
 debian-cloned ansible_host=192.168.125.130 ansible_user=ahmed
-```
+````
 
-* `ansible_host`: The IP address of the VM.
-* `ansible_user`: The SSH user for connecting to the VM.
+* `ansible_host`: The IP address of the VM
+* `ansible_user`: The SSH user for connecting to the VM
 
 ---
 
@@ -31,10 +36,10 @@ spring_app_dest: "/home/{{ ansible_user }}/spring-app"
 spring_app_port: 8081
 ```
 
-* `docker_users`: Users to be added to the Docker group for permission to manage containers.
-* `spring_app_src`: Path to the Spring Petclinic files on the Ansible Controller.
-* `spring_app_dest`: Path to copy the application files on each VM.
-* `spring_app_port`: New port on the VM to avoid conflicts with existing services (e.g., Nginx on 8080).
+* `docker_users`: Users added to the Docker group for container management
+* `spring_app_src`: Path to Spring Petclinic files on the Ansible Controller
+* `spring_app_dest`: Path to copy the application files on each VM
+* `spring_app_port`: Port mapped on the VM (avoids conflicts with services like Nginx on 8080)
 
 ---
 
@@ -42,7 +47,7 @@ spring_app_port: 8081
 
 ### A. Docker Installation
 
-1. **Stop Docker if running**:
+**1. Stop Docker if running**
 
 ```yaml
 - name: Stop Docker service if running
@@ -52,7 +57,7 @@ spring_app_port: 8081
   ignore_errors: yes
 ```
 
-2. **Remove old Docker**:
+**2. Remove old Docker**
 
 ```yaml
 - name: Remove Docker package
@@ -73,7 +78,7 @@ spring_app_port: 8081
   ignore_errors: yes
 ```
 
-3. **Install Docker**:
+**3. Install Docker**
 
 ```yaml
 - name: Install Docker package directly
@@ -83,7 +88,7 @@ spring_app_port: 8081
     update_cache: yes
 ```
 
-4. **Ensure Docker is running and enabled**:
+**4. Ensure Docker is running and enabled**
 
 ```yaml
 - name: Ensure Docker service is running
@@ -93,7 +98,7 @@ spring_app_port: 8081
     enabled: yes
 ```
 
-5. **Add users to Docker group**:
+**5. Add users to Docker group**
 
 ```yaml
 - name: Add users to docker group
@@ -108,7 +113,7 @@ spring_app_port: 8081
 
 ### B. Deploy Spring Petclinic
 
-1. **Create application directory on VM**:
+**1. Create application directory**
 
 ```yaml
 - name: Create application directory
@@ -118,7 +123,7 @@ spring_app_port: 8081
     mode: '0755'
 ```
 
-2. **Copy application files to VM (all files at once)**:
+**2. Copy application files**
 
 ```yaml
 - name: Copy Spring Petclinic files to VM
@@ -130,7 +135,7 @@ spring_app_port: 8081
     mode: '0644'
 ```
 
-3. **Build Docker image**:
+**3. Build Docker image**
 
 ```yaml
 - name: Build Docker image for Spring Petclinic
@@ -142,7 +147,7 @@ spring_app_port: 8081
     state: present
 ```
 
-4. **Run Docker container and map the new port**:
+**4. Run Docker container**
 
 ```yaml
 - name: Run Spring Petclinic container
@@ -155,7 +160,7 @@ spring_app_port: 8081
       - "{{ spring_app_port }}:8080"
 ```
 
-> The `spring_app_port` variable ensures the application uses a port that does not conflict with other services like Nginx.
+> `spring_app_port` ensures the app uses a port that does not conflict with existing services.
 
 ---
 
@@ -164,12 +169,19 @@ spring_app_port: 8081
 ```bash
 ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
 ```
+
 * Enter the sudo password for each VM.
-* The playbook will install Docker, copy application files, build the Docker image, and run the container.
-* ![1](1.png)
+* The playbook will:
 
+  1. Install Docker
+  2. Copy Spring Petclinic files
+  3. Build the Docker image
+  4. Run the container
 
- ![2](2.png)
+📸 Example output:
+![1](1.png)
+![2](2.png)
+
 ---
 
 ## 5. Access the Application
@@ -177,28 +189,29 @@ ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
 After deployment:
 
 * **VM: debian1** → [http://192.168.125.131:8081](http://192.168.125.131:8081)
-* ![131](131.png)
+  ![131](131.png)
+
 * **VM: debian-cloned** → [http://192.168.125.130:8081](http://192.168.125.130:8081)
-* ![130](130.png)
-
-
----
-
-## 🚀 Ansible Playbook: Install Nginx on Debian
-
-This project demonstrates how to use **Ansible** to install **Nginx** on Debian-based hosts 
-with a condition to run only if the host IP matches a specific value.
+  ![130](130.png)
 
 ---
 
-# 📂 Files
-# hosts.ini → Inventory file containing hosts (debian1, debian-cloned).
-# playbook1.yml → Main Ansible playbook.
+## 🚀 Conditional Installation of Nginx with Ansible
+
+This playbook shows how to install **Nginx** on Debian hosts only if their IP address matches a specific value.
 
 ---
 
-# 📝 Create the Playbook
+### Files
 
+* `hosts.ini` → Inventory file with hosts (`debian1`, `debian-cloned`)
+* `playbook1.yml` → Main playbook
+
+---
+
+### Playbook Example
+
+```yaml
 - name: Install nginx on Debian-family hosts
   hosts: vm
   gather_facts: yes
@@ -210,12 +223,13 @@ with a condition to run only if the host IP matches a specific value.
         name: nginx
         state: present
       when: ansible_facts['default_ipv4']['address'] == "172.25.250.11"
-EOF
+```
 
 ---
 
-# ⚙️ Commands Used
+### Commands
 
+```bash
 # Run the playbook
 ansible-playbook -i hosts.ini playbook1.yml
 
@@ -224,14 +238,23 @@ ansible -i hosts.ini debian1 -m setup
 
 # Gather only the default IP address
 ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
+```
 
 ---
 
-# 📸 Output
-# Facts were successfully gathered from both hosts ✅
-# Nginx was already installed, so no changes were made (changed=0) ⚡
+### Output
 
+* Facts were successfully gathered from both hosts ✅
+* Nginx was already installed, so no changes were made (`changed=0`) ⚡
 
- ![conditioning](condition.png)
+📸 Example:
+![conditioning](condition.png)
+
+```
+
+---
+
+تحب أخلي الـ README كله في **شيل بلوك واحد** زي ما عملنا قبل كده عشان تقدر تعمله Copy مرة واحدة، ولا تخليه منسق كده sections منفصلة؟
+```
 
 
