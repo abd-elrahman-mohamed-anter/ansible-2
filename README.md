@@ -1,6 +1,6 @@
 
 
-````markdown
+
 # 🐳 Deploying Spring Petclinic using Ansible and Docker on Debian VMs
 
 This project demonstrates how to automate **Docker installation** and deploy the **Spring Petclinic** application on Debian VMs using **Ansible**.
