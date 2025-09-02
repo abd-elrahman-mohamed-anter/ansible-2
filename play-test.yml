@@ -1,0 +1,91 @@
+---
+- name: Setup Docker on Debian hosts
+  hosts: all
+  become: true
+  vars:
+    docker_users:
+      - abdoomo
+      - ahmed
+    spring_app_src: /home/abdoomo/ansible
+    spring_app_dest: "/home/{{ ansible_user }}/spring-app"
+    spring_app_port: 8081
+
+  tasks:
+    # --------------------
+    # A. Docker Installation
+    # --------------------
+    - name: Stop Docker service if running
+      service:
+        name: docker
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove Docker package
+      apt:
+        name: docker.io
+        state: absent
+        purge: yes
+
+    - name: Remove Docker directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/docker
+        - /etc/docker
+        - /var/run/docker.sock
+        - /usr/bin/docker
+      ignore_errors: yes
+
+    - name: Install Docker package directly
+      apt:
+        name: docker.io
+        state: latest
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users }}"
+
+    # --------------------
+    # B. Deploy Spring Petclinic
+    # --------------------
+    - name: Create application directory
+      file:
+        path: "{{ spring_app_dest }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy Spring Petclinic files to VM
+      copy:
+        src: "{{ spring_app_src }}/"
+        dest: "{{ spring_app_dest }}/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+
+    - name: Build Docker image for Spring Petclinic
+      docker_image:
+        name: spring-petclinic
+        tag: latest
+        build:
+          path: "{{ spring_app_dest }}"
+        state: present
+
+    - name: Run Spring Petclinic container
+      docker_container:
+        name: spring-petclinic
+        image: spring-petclinic:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "{{ spring_app_port }}:8080"
