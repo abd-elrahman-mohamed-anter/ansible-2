@@ -169,7 +169,7 @@ ansible-playbook -i hosts.ini docker-task.yml --ask-become-pass
 * ![1](1.png)
 
 
-* ![2](2.png)
+ ![2](2.png)
 ---
 
 ## 5. Access the Application
@@ -183,4 +183,55 @@ After deployment:
 
 
 ---
+
+## 🚀 Ansible Playbook: Install Nginx on Debian
+
+This project demonstrates how to use **Ansible** to install **Nginx** on Debian-based hosts 
+with a condition to run only if the host IP matches a specific value.
+
+---
+
+# 📂 Files
+# hosts.ini → Inventory file containing hosts (debian1, debian-cloned).
+# playbook1.yml → Main Ansible playbook.
+
+---
+
+# 📝 Create the Playbook
+
+- name: Install nginx on Debian-family hosts
+  hosts: vm
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_facts['default_ipv4']['address'] == "172.25.250.11"
+EOF
+
+---
+
+# ⚙️ Commands Used
+
+# Run the playbook
+ansible-playbook -i hosts.ini playbook1.yml
+
+# Gather facts from a specific host
+ansible -i hosts.ini debian1 -m setup
+
+# Gather only the default IP address
+ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
+
+---
+
+# 📸 Output
+# Facts were successfully gathered from both hosts ✅
+# Nginx was already installed, so no changes were made (changed=0) ⚡
+
+
+ ![conditioning](condition.png)
+
 
