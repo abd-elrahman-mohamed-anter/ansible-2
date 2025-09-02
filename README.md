@@ -245,7 +245,9 @@ ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
 * Facts were successfully gathered from both hosts ✅
 * Nginx was already installed, so no changes were made (`changed=0`) ⚡
 
-📸 Example:
+ ### 📸 Example 1 :
 ![conditioning](condition1.png)
 
+### 📸 Example 2 : 
+![conditioning](condition.png)
 
