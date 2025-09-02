@@ -1,7 +1,5 @@
 
 
----
-
 ````markdown
 # 🐳 Deploying Spring Petclinic using Ansible and Docker on Debian VMs
 
