@@ -248,4 +248,4 @@ ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
 📸 Example:
 ![conditioning](condition1.png)
 
-```
+
