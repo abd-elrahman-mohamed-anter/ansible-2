@@ -249,10 +249,3 @@ ansible -i hosts.ini debian1 -m setup -a "filter=ansible_default_ipv4"
 ![conditioning](condition.png)
 
 ```
-
----
-
-تحب أخلي الـ README كله في **شيل بلوك واحد** زي ما عملنا قبل كده عشان تقدر تعمله Copy مرة واحدة، ولا تخليه منسق كده sections منفصلة؟
-```
-
-
