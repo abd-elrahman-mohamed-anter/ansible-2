@@ -8,8 +8,7 @@
       - ahmed
     spring_app_src: /home/abdoomo/ansible
     spring_app_dest: "/home/{{ ansible_user }}/spring-app"
-    spring_app_port: 8081   # البورت الجديد على الـ VM
-
+    spring_app_port: 8081   
   tasks:
 
     # ---------- Docker Installation ----------
@@ -85,4 +84,4 @@
         state: started
         restart_policy: always
         published_ports:
-          - "{{ spring_app_port }}:8080"  # ربط البورت الجديد على الـ VM
+          - "{{ spring_app_port }}:8080" 
